@@ -1,101 +1,286 @@
-import Image from "next/image";
+'use client'
+import { useState, useEffect } from "react";
+import { Nav, 
+        FlightSearchBar, 
+        Section, 
+        Faq, 
+        LoadingIcon
+      } from "@/components";
+import axios from "axios";
 
-export default function Home() {
+// List of valid destinations and their corresponding 'toEntityId' values
+const cityToEntityId: { [key: string]: string } = {
+  "Port Harcourt": "PHC",
+  Paris: "CDG",
+  "New York": "JFK",
+  London: "LHR",
+  "Nuremberg": "NUE",
+  // Add more cities as needed
+};
+
+
+export default function Home() {  
+  // Fetch flight data
+  const [tripType, setTripType] = useState("One way");
+  const [passengers, setPassengers] = useState(1);
+  const [classType, setClassType] = useState("Economy");
+  const [from, setFrom] = useState("Port Harcourt");
+  const [to, setTo] = useState("Paris");
+  const [departureDate, setDepartureDate] = useState("");
+  const [returnDate, setReturnDate] = useState("");
+  const [children, setChildren] = useState(0); // For children
+  const [infants, setInfants] = useState(0); // For infants
+  const [flights, setFlights] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+
+  const handleSearch = async () => {
+    const fromEntityId = cityToEntityId[from];
+    const toEntityId = cityToEntityId[to];
+
+    if (!fromEntityId || !toEntityId) {
+      alert("Invalid city selection. Please choose valid cities.");
+      return;
+    }
+
+    const options = {
+      method: 'POST',
+      url: 'https://sky-scanner3.p.rapidapi.com/flights/search-multi-city',
+      headers: {
+        'x-rapidapi-key': `${process.env.NEXT_PUBLIC_RAPID_API_KEY}`,
+        'x-rapidapi-host': 'sky-scanner3.p.rapidapi.com',
+        'Content-Type': 'application/json'
+      },
+      data: {
+        market: 'US',
+        locale: 'en-US',
+        currency: 'USD',
+        adults: passengers,
+        children: children,
+        infants: infants,
+        cabinClass: classType,
+        stops: ['direct', '1stop', '2stops'],
+        sort: 'cheapest_first',
+        flights: [
+          {
+            fromEntityId,
+            toEntityId,
+            departDate: departureDate,
+          },
+        ],
+      }
+    };
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await axios.request(options);
+      const responseData = response.data
+      console.log("Full Response:", response);
+      setFlights(responseData);
+    } catch (error) {
+      setError("Error fetching flight data. Please try again later.");
+      console.error("Error fetching flight data:", error);
+    }finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    console.log("Updated Flights:", flights);
+  }, [flights]);
+  
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <div>
+        {isLoading && <LoadingIcon />}
+      <Nav />
+      <div className="container">
+        <div
+          style={{
+            backgroundImage: `url(https://www.gstatic.com/travel-frontend/animation/hero/flights_nc_4.svg)`,
+          }}
+          className="min-h-32 max-h-60 lg:min-h-[14rem] lg:max-h-[18rem] w-full bg-center bg-cover"
         />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+        <h2 className="text-3xl md:text-5xl lg:text-6xl font-medium text-center">Flights</h2>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <FlightSearchBar 
+          tripType={tripType}
+          setTripType={setTripType}
+          passengers={passengers}
+          setPassengers={setPassengers}
+          from={from}
+          setFrom={setFrom}
+          to={to}
+          setTo={setTo}
+          departureDate={departureDate}
+          setDepartureDate={setDepartureDate}
+          children={children}
+          setChildren={setChildren}
+          infants={infants}
+          setInfants={setInfants}
+          cityToEntityId={cityToEntityId}
+          handleSearch={handleSearch}
+        />       
+
+{isLoading ? (
+        <p>Loading flights...</p>
+      ) : error ? (
+        <p>{error}</p>
+      ) : flights  ? (
+        <Section 
+        flights={flights}
+        />
+      ) : (
+        <p>No flights found yet.</p>
+      )}
+
+        <Faq />
+      </div>
     </div>
   );
 }
+
+
+
+// 'use client'
+// import { useState, useEffect } from "react";
+// import { Nav, FlightSearchBar, Section, Faq } from "@/components";
+// import axios from "axios";
+
+// // List of valid destinations and their corresponding 'toEntityId' values
+// const cityToEntityId: { [key: string]: string } = {
+//   "Port Harcourt": "PHC",
+//   Paris: "CDG",
+//   "New York": "JFK",
+//   London: "LHR",
+//   "Nuremberg": "NUE",
+//   // Add more cities as needed
+// };
+
+// export default function Home() {
+//   const [tripType, setTripType] = useState("One way");
+//   const [passengers, setPassengers] = useState(1);
+//   const [classType, setClassType] = useState("Economy");
+//   const [from, setFrom] = useState("Port Harcourt");
+//   const [to, setTo] = useState("Paris");
+//   const [departureDate, setDepartureDate] = useState("");
+//   const [returnDate, setReturnDate] = useState("");
+//   const [children, setChildren] = useState(0); // For children
+//   const [infants, setInfants] = useState(0); // For infants
+//   const [flights, setFlights] = useState<any>(null); // Handle null for initial state
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [error, setError] = useState("");
+
+//   const handleSearch = async () => {
+//     const fromEntityId = cityToEntityId[from];
+//     const toEntityId = cityToEntityId[to];
+
+//     if (!fromEntityId || !toEntityId) {
+//       alert("Invalid city selection. Please choose valid cities.");
+//       return;
+//     }
+
+//     const options = {
+//       method: "POST",
+//       url: "https://sky-scanner3.p.rapidapi.com/flights/search-multi-city",
+//       headers: {
+//         "x-rapidapi-key": `${process.env.NEXT_PUBLIC_RAPID_API_KEY}`,
+//         "x-rapidapi-host": "sky-scanner3.p.rapidapi.com",
+//         "Content-Type": "application/json",
+//       },
+//       data: {
+//         market: "US",
+//         locale: "en-US",
+//         currency: "USD",
+//         adults: passengers,
+//         children: children,
+//         infants: infants,
+//         cabinClass: classType,
+//         stops: ["direct", "1stop", "2stops"],
+//         sort: "cheapest_first",
+//         flights: [
+//           {
+//             fromEntityId,
+//             toEntityId,
+//             departDate: departureDate,
+//           },
+//         ],
+//       },
+//     };
+
+//     setIsLoading(true);
+//     setError("");
+//     setFlights(null); // Reset flights before making the request
+
+//     try {
+//       const response = await axios.request(options);
+//       console.log('hello', response.data);
+//       setFlights(response.data); // Update with the flight data
+//     } catch (error) {
+//       setError("Error fetching flight data. Please try again later.");
+//       console.error("Error fetching flight data:", error);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div>
+//       <Nav />
+//       <div className="container">
+//         <div
+//           style={{
+//             backgroundImage: `url(https://www.gstatic.com/travel-frontend/animation/hero/flights_nc_4.svg)`,
+//           }}
+//           className="min-h-32 max-h-60 lg:min-h-[14rem] lg:max-h-[18rem] w-full bg-center bg-cover"
+//         />
+//         <h2 className="text-3xl md:text-5xl lg:text-6xl font-medium text-center">
+//           Flights
+//         </h2>
+
+//         <FlightSearchBar
+//           tripType={tripType}
+//           setTripType={setTripType}
+//           passengers={passengers}
+//           setPassengers={setPassengers}
+//           from={from}
+//           setFrom={setFrom}
+//           to={to}
+//           setTo={setTo}
+//           departureDate={departureDate}
+//           setDepartureDate={setDepartureDate}
+//           children={children}
+//           setChildren={setChildren}
+//           infants={infants}
+//           setInfants={setInfants}
+//           cityToEntityId={cityToEntityId}
+//           handleSearch={handleSearch}
+//         />
+
+//         {/* Render Loading, Error, or Flights Section */}
+//         {isLoading && <div>Loading...</div>}
+
+//         {!isLoading && error && <div>{error}</div>}
+
+//         {!isLoading && flights && flights.data && flights.data.itineraries?.length > 0 ? (
+//           <Section 
+//           flights={flights.data.itineraries} 
+//           isLoading={isLoading}
+//           error={error}
+//           />
+//         ) : (
+//           !isLoading &&
+//           flights && (
+//             <div className="text-center text-gray-600">
+//               No flights found. Please try a different search.
+//             </div>
+//           )
+//         )}
+
+//         <Faq />
+//       </div>
+//     </div>
+//   );
+// }

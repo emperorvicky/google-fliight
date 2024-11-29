@@ -8,11 +8,20 @@ export default {
   ],
   theme: {
     extend: {
+      container: {
+  			center: true,
+  			padding: {
+  				DEFAULT: '20px',
+  				lg: '80px'
+  			}
+  		},
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('tailwind-scrollbar-hide'),
+  ],
 } satisfies Config;
